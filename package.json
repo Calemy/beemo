@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@fastify/multipart": "^7.1.0",
+    "bcrypt": "^5.0.1",
+    "crypto": "^1.0.1",
+    "cutesy.js": "^1.1.3",
+    "fastify": "^4.2.1",
+    "mysql-await": "^2.1.8",
+    "node-cache": "^5.1.2"
+  }
+}
