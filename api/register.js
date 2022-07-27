@@ -6,10 +6,12 @@ module.exports = async function(req, reply){
     const [ username, email, password ] = [req.body["user[username]"].value, req.body["user[user_email]"].value, req.body["user[password]"].value]
 
     const username_safe = username.toLowerCase().replaceAll(" ", "_")
-    const check = database.requestOne(`SELECT * FROM users WHERE username_safe = "${username_safe}" OR email = "${email}"`)
+    await database.client.connect()
+    const check = await database.client.db("lazer").collection("users").findOne({ $or : [{ username_safe: username_safe}, { email: email }] })
+    await database.client.close()
 
-    if(check.length > 0){
-        let form_error = {}
+    if(check != null){
+        let form_error = { user : {} }
         if(check.username_safe == username_safe) form_error.user.username = ["Username is already in use!"]
         if(check.email == email) form_error.user.user_email = ["E-Mail is already in use!"]
         return form_error
@@ -19,19 +21,30 @@ module.exports = async function(req, reply){
 
     const hashed = await bcrypt.hash(hash, 10)
 
-    await database.prepared(`INSERT INTO users (username, username_safe, email, password, register_date, latest_activity) VALUES (?, ?, ?, ?, ?, ?)`, [
-        username,
-        username_safe,
-        email,
-        hashed,
-        Math.floor(Date.now() / 1000),
-        Math.floor(Date.now() / 1000)
-    ])
+    await database.client.connect()
+    const init = await database.client.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
+    await database.client.close()
 
-    const user = await database.requestOne(`SELECT * FROM users WHERE username_safe = '${username}'`)
-    
+    await database.client.connect()
+    await database.client.db("lazer").collection("users").insertOne({
+        id: parseInt(init[0].id) + 1,
+        username: username,
+        username_safe: username_safe,
+        email: email,
+        password: hashed,
+        privileges: 1,
+        register_date: Math.floor(Date.now() / 1000),
+        latest_activity: Math.floor(Date.now() / 1000),
+        donator_end: 0,
+        donator_time: 0,
+        country: "XX"
+    })
 
-    //const user = await database.requestOne(`SELECT * FROM users WHERE username_safe = ${req.body.username.value.toLowerCase().replaceAll(" ", "_")}`)
+    await database.client.close()
+
+    await database.client.connect()
+    const user = await database.client.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
+    await database.client.close()
 
     return {
         "avatar_url": "https:\/\/osu.ppy.sh\/images\/layout\/avatar-guest.png",

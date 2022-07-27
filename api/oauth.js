@@ -16,7 +16,9 @@ module.exports = async function(fastify, opts){
             return session
         }
 
-        const user = await database.requestOne(`SELECT id, username, password, privileges FROM users WHERE username_safe = '${username}'`)
+        await database.client.connect()
+        const user = await database.client.db("lazer").collection("users").findOne({ username_safe: username })
+        await database.client.close()
 
         if(!user) return error("This Username does not exist")
 

@@ -7,6 +7,7 @@ module.exports = async function(){
     fastify.register(require('./v2'), { prefix: '/api/v2'  })
     fastify.register(require('./multiplayer'), { prefix: '/multiplayer'})
     fastify.register(require('./spectator'), { prefix: '/spectator'})
+
     fastify.get('/', async (req, reply) => {
         return "If you see this, the frontend got deactivated to develop on Beemo - a lazer implementation for Horizon\n"+
         "No panic, you will see everything as usual again soon."

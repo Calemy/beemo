@@ -1,11 +1,16 @@
 const database = require('../helper/database')
 const sessions = require('../constants/sessions')
 module.exports = async function(fastify, opts){
+
+    fastify.register(require('./beatmaps'), { prefix: '/beatmaps'})
+
     fastify.get("/me/", async (req, reply) => {
 
       const session = sessions.access.get(req.headers.authorization.split(" ")[1])
       if(!session) return
-      const user = await database.requestOne(`SELECT * FROM users WHERE id = ${session.id}`)
+      await database.client.connect()
+      const user = await database.client.db("lazer").collection("users").findOne({id: session.id})
+      await database.client.close()
 
         reply.send({
             avatar_url: `https://a.lemres.de/${user.id + 998}`,
