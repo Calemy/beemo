@@ -2,6 +2,7 @@ const sessions = require('../constants/sessions')
 const database = require('../helper/database')
 const fetch = require('node-fetch')
 const auth = require('../helper/auth')
+const { url } = require('../config')
 const { UserCompact } = require('../constants/player')
 module.exports = async function(fastify, opts){
 
@@ -20,13 +21,16 @@ module.exports = async function(fastify, opts){
         
         let response = await request.json()
 
-        database.mongoRequest("beatmaps", "insertOne", response)
+        await database.mongoRequest("beatmaps", "insertOne", response)
 
         return response
 
     })
 
     fastify.get('/:id/solo-scores', async (req, reply) => {
+
+        await fetch(`https://${url}/api/v2/beatmaps/lookup?id=${req.params.id}`)
+
         await database.client.connect()
         const beatmap = await database.client.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.params.id) })
         await database.client.close()

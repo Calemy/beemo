@@ -1,8 +1,16 @@
 const database = require('../helper/database')
 const sessions = require('../constants/sessions')
+const { url } = require('../config')
 module.exports = async function(fastify, opts){
 
     fastify.register(require('./beatmaps'), { prefix: '/beatmaps'})
+    fastify.register(require('./sets'), { prefix: '/beatmapsets'})
+
+    fastify.get('/comments', async (req, reply) => {
+      return {
+        comments: []
+      }
+    })
 
     fastify.get("/me/", async (req, reply) => {
 
@@ -13,7 +21,7 @@ module.exports = async function(fastify, opts){
       await database.client.close()
 
         reply.send({
-            avatar_url: `https://a.lemres.de/${user.id + 998}`,
+            avatar_url: `https://a.${url}/${user.id + 998}`,
             country_code: 'BR',
             default_group: 'default',
             id: user.id,

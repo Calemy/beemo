@@ -1,4 +1,5 @@
 const fastify = require('fastify')({ logger: true })
+const { url, port } = require('../config')
 const logger = require('../helper/logger')
 
 module.exports = async function(){
@@ -17,6 +18,6 @@ module.exports = async function(){
         return await require('./register')(req, reply)
     })
 
-    await fastify.listen({ port : 6969 })
-    logger.info("Listening on https://lemres.de (Port 6969)")
+    await fastify.listen({ port })
+    logger.info(`Listening on https://${url} (Port ${port})`)
 }
