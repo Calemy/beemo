@@ -412,7 +412,7 @@ module.exports = async function(fastify, opts){
             interests: 'fhana',
             join_date: '2014-05-28T17:34:35+00:00',
             kudosu: { total: 3272, available: 2457 },
-            location: 'France',
+            location: 'Brazil',
             max_blocks: 100,
             max_friends: 500,
             occupation: 'Game Designer',
@@ -432,7 +432,7 @@ module.exports = async function(fastify, opts){
             title_url: null,
             twitter: 'sotarks',
             website: 'http://www.twitch.tv/sotarks',
-            country: { code: 'FR', name: 'France' },
+            country: { code: 'BR', name: 'Brazil' },
             cover: {
               custom_url: 'https://assets.ppy.sh/user-profile-covers/4452992/6930dde80f0cbe68e142f403e551493b83c74f1f58e3e35f81cfc3944d24fd65.jpeg',      
               url: 'https://assets.ppy.sh/user-profile-covers/4452992/6930dde80f0cbe68e142f403e551493b83c74f1f58e3e35f81cfc3944d24fd65.jpeg',

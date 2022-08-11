@@ -13,6 +13,7 @@ module.exports = async function(fastify, opts){
             let session = sessions.refresh.get(refresh_token)
             session.expires_in = (Math.floor(Date.now() / 1000) + 86400)
             session.access_token = await generateToken("access")
+            sessions.access.set(session.access_token, session, 86400)
             return session
         }
 

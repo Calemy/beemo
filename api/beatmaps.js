@@ -4,9 +4,10 @@ const fetch = require('node-fetch')
 const auth = require('../helper/auth')
 const { url } = require('../config')
 const { UserCompact } = require('../constants/player')
+const Logger = require('cutesy.js')
 module.exports = async function(fastify, opts){
 
-    fastify.get('/lookup', async (req, reply) => {
+    fastify.get('/lookup', async (req, reply) => { //* Beatmap Information
         const key = await auth.login()
 
         const search = await database.mongoRequest("beatmaps", "findOne", { id: parseInt(req.query.id) })
@@ -21,13 +22,22 @@ module.exports = async function(fastify, opts){
         
         let response = await request.json()
 
-        await database.mongoRequest("beatmaps", "insertOne", response)
+        const setRequest = await fetch(`https://osu.ppy.sh/api/v2/beatmapsets/${response.beatmapset_id}`, {
+            headers: {
+                "Authorization": `Bearer ${key}`
+            }
+        })
+        const set = await setRequest.json()
+
+        for(var i = 0; i < set.beatmaps.length; i++) {
+            await database.mongoRequest("beatmaps", "insertOne", set.beatmaps[i])
+        }
 
         return response
 
     })
 
-    fastify.get('/:id/solo-scores', async (req, reply) => {
+    fastify.get('/:id/solo-scores', async (req, reply) => { //* Leaderboards
 
         await fetch(`https://${url}/api/v2/beatmaps/lookup?id=${req.params.id}`)
 
@@ -36,7 +46,7 @@ module.exports = async function(fastify, opts){
         await database.client.close()
 
         await database.client.connect()
-        const scores = await database.client.db("lazer").collection("scores").find({ beatmap: beatmap.checksum, completed: 3 }).sort({ total_score: -1}).toArray()
+        const scores = await database.client.db("lazer").collection("scores").find({ beatmap: beatmap.checksum, completed: 3 }).sort({total_score : -1}).toArray()
         await database.client.close()
         
         const result = []
@@ -96,7 +106,7 @@ module.exports = async function(fastify, opts){
         }
     })
 
-    fastify.post('/:id/solo/scores', async (req, reply) => {
+    fastify.post('/:id/solo/scores', async (req, reply) => { //* Pre-Game Submission
         const version = req.body.version_hash.value //Apperently the OS + version
         const beatmap = req.body.beatmap_hash.value //beatmap_md5
         const mode = req.body.ruleset_id.value
@@ -136,7 +146,7 @@ module.exports = async function(fastify, opts){
         }
     })
 
-    fastify.put('/:bid/solo/scores/:id', async (req, reply) => {
+    fastify.put('/:bid/solo/scores/:id', async (req, reply) => { //* Post-game Submission
         const session = sessions.access.get(req.headers.authorization.split(" ")[1])
         const time = Math.floor(Date.now() / 1000)
         const date = new Date(time).toISOString()
@@ -144,6 +154,8 @@ module.exports = async function(fastify, opts){
         await database.client.connect()
         const initial = await database.client.db("lazer").collection("scores").findOne({id: parseInt(req.params.id) })
         await database.client.close()
+
+        if(initial == null) return { error: "Couldn't find score" }
 
         let score = req.body
 
@@ -153,11 +165,36 @@ module.exports = async function(fastify, opts){
             let c = 0
             if(!score.passed) return c
             c++
-            c++
-            c++
-            //Map ranked, c++
-            //best score, c++
+            await database.client.connect()
+            const best = await database.client.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap }).sort({total_score: -1}).toArray()
+            await database.client.close()
+
+            c++ //Map ranked, c++
+
+            if(best != null){
+                if(score.total_score < best[0].total_score) return c
+            }
+
+            await database.client.connect()
+            await database.client.db("lazer").collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
+            await database.client.close()
+
+            c++ //best score, c++
+
             return c
+        }
+
+        async function calculatePP(){ //TODO
+            const mods = score.mods
+
+            const acc = parseFloat((score.accuracy * 100).toFixed(2))
+
+            const modsInt = 0
+
+            const ppRequest = await fetch(`https://catboy.best/api/meta/${beatmap.id}?mods=${modsInt}&max_combo=${score.max_combo}&acc=${acc}`)
+            const ppData = await ppRequest.json()
+
+            return ppData.pp[acc].pp
         }
         
         
@@ -165,6 +202,7 @@ module.exports = async function(fastify, opts){
         score.time = time
         score.type = "solo_score"
         score.statistics.perfect = +score.statistics.perfect
+        if(isNaN(score.statistics.perfect)) score.statistics.perfect = 1
         score.legacy_fc = null
         //Calculate rosu-pp || for now using mino LUL
 

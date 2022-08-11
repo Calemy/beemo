@@ -14,4 +14,8 @@ module.exports = async function(fastify, opts){
         return request.json()
 
     })
+
+    fastify.get(`/:id/download`, async (req, reply) => {
+        reply.redirect(302, `https://catboy.best/d/${req.params.id}`)
+    })
 }
