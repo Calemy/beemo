@@ -22,8 +22,9 @@ module.exports = async function(req, reply){
     const hashed = await bcrypt.hash(hash, 10)
 
     await database.client.connect()
-    const init = await database.client.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
+    let init = await database.client.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
     await database.client.close()
+    if(init.length < 1) init = [{ id: 2 }]
 
     await database.client.connect()
     await database.client.db("lazer").collection("users").insertOne({
