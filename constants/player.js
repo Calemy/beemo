@@ -1,6 +1,7 @@
-const database = require('../helper/database')
+import database from "../helper/database.js"
+import { sessions } from "./cache.js"
 
-class UserCompact {
+export class UserCompact {
     //!i hate peppy
     constructor(id){
         this.id = id
@@ -23,15 +24,13 @@ class UserCompact {
     }
     
     async getUser(t){
-        const token = await database.requestOne(`SELECT id FROM sessions WHERE access_token = ${t}`)
+        const token = sessions.get(t)
         this.id = token.id
         this.load()
     }
 
     async load(){
-        await database.client.connect()
-        const user = await database.client.db("lazer").collection("users").findOne({ id: this.id })
-        await database.client.close()
+        const user = await database.db("lazer").collection("users").findOne({ id: this.id })
         this.avatar_url = `https:\/\/a.lemres.de\/${this.id + 998}`
         this.country.code = user.country
         this.country.name = "Unknown"
@@ -42,7 +41,7 @@ class UserCompact {
 
 }
 
-class User extends UserCompact {
+export class User extends UserCompact {
     constructor(){
         this.cover_url = "https:\/\/osu.ppy.sh\/images\/headers\/profile-covers\/c5.jpg"
         this.discord = null
@@ -113,7 +112,7 @@ class User extends UserCompact {
     }
 }
 
-module.exports = {
+export default {
     User,
     UserCompact
 }
