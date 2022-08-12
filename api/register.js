@@ -1,14 +1,12 @@
-const database = require("../helper/database")
-const crypto = require('node:crypto')
-const bcrypt = require('bcrypt')
+import bcrypt from "bcrypt"
+import crypto from "node:crypto"
+import database from "../helper/database.js"
 
-module.exports = async function(req, reply){
+export default async function(req, reply){
     const [ username, email, password ] = [req.body["user[username]"].value, req.body["user[user_email]"].value, req.body["user[password]"].value]
 
     const username_safe = username.toLowerCase().replaceAll(" ", "_")
-    await database.client.connect()
-    const check = await database.client.db("lazer").collection("users").findOne({ $or : [{ username_safe: username_safe}, { email: email }] })
-    await database.client.close()
+    const check = await database.db("lazer").collection("users").findOne({ $or : [{ username_safe: username_safe}, { email: email }] })
 
     if(check != null){
         let form_error = { user : {} }
@@ -21,13 +19,11 @@ module.exports = async function(req, reply){
 
     const hashed = await bcrypt.hash(hash, 10)
 
-    await database.client.connect()
-    let init = await database.client.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
-    await database.client.close()
+    let init = await database.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
+
     if(init.length < 1) init = [{ id: 2 }]
 
-    await database.client.connect()
-    await database.client.db("lazer").collection("users").insertOne({
+    await database.db("lazer").collection("users").insertOne({
         id: parseInt(init[0].id) + 1,
         username: username,
         username_safe: username_safe,
@@ -38,18 +34,16 @@ module.exports = async function(req, reply){
         latest_activity: Math.floor(Date.now() / 1000),
         donator_end: 0,
         donator_time: 0,
-        country: "XX"
+        country: "BR" //TODO: Determine User Location
     })
 
-    await database.client.close()
+    //TODO: Create Stats
 
-    await database.client.connect()
-    const user = await database.client.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
-    await database.client.close()
+    const user = await database.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
 
     return {
         "avatar_url": "https:\/\/osu.ppy.sh\/images\/layout\/avatar-guest.png",
-        "country_code": "DE", //TODO: find out how to get country (ip locator?)
+        "country_code": user.country, //TODO: find out how to get country (ip locator?)
         "default_group": "default",
         "id": user.id,
         "is_active":true, //? Leaderboard

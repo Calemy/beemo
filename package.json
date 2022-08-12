@@ -1,12 +1,20 @@
 {
+  "name": "lazer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "@fastify/multipart": "^7.1.0",
     "bcrypt": "^5.0.1",
-    "crypto": "^1.0.1",
-    "cutesy.js": "^1.1.4",
-    "fastify": "^4.2.1",
-    "mongodb": "^4.8.0",
-    "mysql-await": "^2.1.8",
-    "node-cache": "^5.1.2"
+    "cutesy.js": "^1.2.0",
+    "fastify": "^4.4.0",
+    "mongodb": "^4.8.1"
   }
 }
