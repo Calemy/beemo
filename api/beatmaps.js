@@ -175,6 +175,8 @@ module.exports = async function(fastify, opts){
                 if(score.total_score < best[0].total_score) return c
             }
 
+            best[0].completed = 2
+
             await database.client.connect()
             await database.client.db("lazer").collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
             await database.client.close()
