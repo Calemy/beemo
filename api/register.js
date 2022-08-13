@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt"
 import crypto from "node:crypto"
+import { User } from "../constants/player.js"
 import database from "../helper/database.js"
 
 export default async function(req, reply){
@@ -39,9 +40,28 @@ export default async function(req, reply){
 
     //TODO: Create Stats
 
-    const user = await database.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
+    const u = await database.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
 
-    return {
+    let user = await new User(u.id).load()
+
+    const load = [];
+
+    for(modul of ["blocks", "cover",
+    "follow_user_mapping", "friends",
+    "unread_pm_count", "user_preferences"]){
+        load.push(user.loadModule(modul))
+    }
+
+    load.push(user.loadModule("country", u.country))
+    load.push(user.loadModule("is_restricted", u.privileges))
+    load.push(user.loadGroups())
+    await Promise.all(load)
+
+    user.country_code = u.country
+
+    return user
+
+    return { //TODO: Use User Class for this
         "avatar_url": "https:\/\/osu.ppy.sh\/images\/layout\/avatar-guest.png",
         "country_code": user.country, //TODO: find out how to get country (ip locator?)
         "default_group": "default",
@@ -124,7 +144,7 @@ export default async function(req, reply){
             "beatmapset_show_nsfw":true,
             "beatmapset_title_show_original":false,
             "comments_show_deleted":false,
-            "forum_posts_show_deleted":true,
+            "forum_posts_show_deleted":false,
             "profile_cover_expanded":true,
             "user_list_filter":"all",
             "user_list_sort":"last_visit",

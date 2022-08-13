@@ -1,4 +1,4 @@
-const sessions = require('../constants/sessions')
+const sessions = require('../constants/cache')
 const database = require('../helper/database')
 const fetch = require('node-fetch')
 const auth = require('../helper/auth')

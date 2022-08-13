@@ -1,10 +1,13 @@
-const database = require('../helper/database')
-const sessions = require('../constants/sessions')
-const { url } = require('../config')
-module.exports = async function(fastify, opts){
+import database from "../helper/database.js"
+import { sessions, tokens } from "../constants/cache.js"
+import { url } from "../config.js"
+// import beatmaps from "./beatmaps.js"
+// import sets from "./sets.js"
 
-    fastify.register(require('./beatmaps'), { prefix: '/beatmaps'})
-    fastify.register(require('./sets'), { prefix: '/beatmapsets'})
+export default async function(fastify, opts){
+
+    // fastify.register(require('./beatmaps'), { prefix: '/beatmaps'})
+    // fastify.register(require('./sets'), { prefix: '/beatmapsets'})
 
     fastify.get('/comments', async (req, reply) => {
       return {
@@ -14,11 +17,9 @@ module.exports = async function(fastify, opts){
 
     fastify.get("/me/", async (req, reply) => {
 
-      const session = sessions.access.get(req.headers.authorization.split(" ")[1])
+      const session = sessions.get(req.headers.authorization.split(" ")[1])
       if(!session) return
-      await database.client.connect()
-      const user = await database.client.db("lazer").collection("users").findOne({id: session.id})
-      await database.client.close()
+      const user = await database.db("lazer").collection("users").findOne({id: session.id})
 
         reply.send({
             avatar_url: `https://a.${url}/${user.id + 998}`,

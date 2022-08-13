@@ -1,53 +1,81 @@
 import database from "../helper/database.js"
+import logger from "../helper/logger.js"
 import { sessions } from "./cache.js"
+import cosmetics from "./cosmetics.js"
+import { calculateRank } from "../helper/server.js"
+import extras from "./playerExtra.js"
 
 export class UserCompact {
     //!i hate peppy
     constructor(id){
         this.id = id
-        this.username = ""
         this.profile_colour = null
-        this.avatar_url = "https:\/\/osu.ppy.sh\/images\/layout\/avatar-guest.png"
-        this.country_code = "XX"
-        this.default_group = "default"
         this.pm_friends_only = false
-        this.last_visit = new Date(0).toISOString()
         this.is_active = true
         this.is_bot = false
         this.is_deleted = false
-        this.is_online = false
-        this.is_supporter = false
-        this.country = {
-            code: "XX",
-            name: "Unknown"
-        }
     }
     
     async getUser(t){
         const token = sessions.get(t)
         this.id = token.id
-        this.load()
+        await this.load()
     }
 
     async load(){
         const user = await database.db("lazer").collection("users").findOne({ id: this.id })
+        this.username = user.username
         this.avatar_url = `https:\/\/a.lemres.de\/${this.id + 998}`
-        this.country.code = user.country
-        this.country.name = "Unknown"
+        this.country = await this.loadModule("country", user.country)
         this.join_date = new Date(user.register_date * 1000).toISOString()
         this.last_visit = new Date(user.latest_activity * 1000).toISOString()
-        this.username = user.username
+        this.default_group = "default"
+        this.is_online = false
+        this.is_supporter = false
+        return this
     }
 
+    async loadAccountHistory() {
+        this.account_history = await new UserAccountHistory(this.id).load()
+        return this
+    }
+
+    async loadBadges(){
+        this.badges = await new UserBadge(this.id).load()
+        return this
+    }
+
+    async loadGroups(){
+        this.groups = await new UserGroup(this.id).load()
+        return this
+    }
+
+    async loadMonthlyPlaycount(){
+        this.monthly_playcounts = await new UserMonthlyPlaycount(this.id).load()
+        return this
+    }
+
+    async loadStatistics(mode){
+        this.statistics = await new UserStatistics(this.id, mode).load()
+        return this
+    }
+
+    async loadModule(){
+        const args = Array.from(arguments)
+        const modul = args.shift()
+
+        this[modul] = await extras[modul](...args)
+        return this
+    }
 }
 
 export class User extends UserCompact {
-    constructor(){
+    constructor(id){
+        super(id)
         this.cover_url = "https:\/\/osu.ppy.sh\/images\/headers\/profile-covers\/c5.jpg"
         this.discord = null
         this.has_supported = false
         this.interests = null
-        this.join_date = new Date(0).toISOString()
         this.kudosu = {
             total: 0,
             available: 0
@@ -72,47 +100,140 @@ export class User extends UserCompact {
         this.title_url = null
         this.twitter = null
         this.website = null
-        this.country = {
-            code : "XX",
-            name: "Unknown"
-        },
-        this.cover = {
-            custom_url : null,
-            url : "https:\/\/osu.ppy.sh\/images\/headers\/profile-covers\/c5.jpg",
-            id: 5
-        }
         this.is_admin = false
         this.is_bng = false
         this.is_gmt = false
         this.is_limited_bn = false
         this.is_moderator = false
         this.is_nat = false
-        this.is_restricted = false
         this.is_silenced = false
-        this.blocks = []
-        this.follow_user_mapping = []
-        this.friends = []
-        this.groups = []
-        this.unread_pm_count = 0
-        this.user_preferences = {
-            audio_autoplay : false,
-            audio_muted : false,
-            audio_volume : 0.45,
-            beatmapset_card_size : "normal",
-            beatmapset_download : "all",
-            beatmapset_show_nsfw : true,
-            beatmapset_title_show_original : false,
-            comments_show_deleted : false,
-            forum_posts_show_deleted : true,
-            profile_cover_expanded : true,
-            user_list_filter : "all",
-            user_list_sort : "last_visit",
-            user_list_view : "card"
-        }
     }
+}
+
+export class UserAccountHistory {
+    constructor(id){
+        this.id = id
+        this.incidents = []
+    }
+
+    async load(){
+        const incidents = await database.db("mino").collection("incidents").find({ user: this.id }).project({ user: 0 }).sort({ timestamp: -1 }).toArray()
+        if(incidents.length < 1) return this.incidents
+        for(let i = 0; i < incidents.length; i++){
+            let incident = incidents[i]
+
+            incident.timestamp = new Date(incident.timestamp * 1000).toISOString()
+
+            this.incidents.push(incident)
+        }
+        return this.incidents
+    }
+}
+
+export class UserBadge {
+    constructor(id){
+        this.id = id
+        this.badges = []
+    }
+
+    async load(){
+        const badges = await database.db("mino").collection("cosmetics").find({ id: this.id }).sort({ "badges.awarded_at": -1 }).toArray()
+        if(badges.length < 1) return this.badges
+        for(let i = 0; i < badges.length; i++){
+            const userBadge = badges[i]
+            const badge = await new cosmetics.Badge(userBadge.id).load()
+
+            if(!badge){
+                logger.red(`Badge ${userBadge.id} not found`).send().save(`./.data/logs/error.txt`)
+            }
+
+            this.badges.push({
+                awarded_at: new Date(userBadge.awarded_at * 1000).toISOString(),
+                description: badge.description,
+                image_url: badge.image_url,
+                url: badge.url,
+            })
+        }
+        return this.badges
+    }
+}
+
+export class UserGroup {
+    constructor(id){
+        this.id = id
+        this.groups = []
+    }
+
+    async load(){
+        const group = await database.db("mino").collection("cosmetics").find({ id: this.id }).sort({ "groups.id" : 1 }).toArray()
+        if(group.length < 1) return this.groups
+
+        for(let i = 0; i < groups.length; i++){
+            const userGroup = groups[i]
+            const group = await new cosmetics.Group(userGroup.id).load()
+
+            if(!group){
+                logger.red(`Badge ${userGroup.id} not found`).send().save(`./.data/logs/error.txt`)
+            }
+
+            this.groups.push(group)
+        }
+        return this.groups
+    }
+}
+
+export class UserMonthlyPlaycount {
+    constructor(id){
+        this.id = id
+        this.monthly_playcounts = []
+    }
+
+    async load(){
+        const playcount = await database.db("mino").collection("playcount").find({ id: this.id }).sort({ start_date : 1 }).toArray()
+        if(playcount.length < 1) return this.monthly_playcounts
+
+        for(let i = 0; i < playcount.length; i++) {
+            let month = playcount[i]
+
+            month.start_date = new Date(month.start_date * 1000).toISOString().slice(0, 10)
+
+            this.monthly_playcounts.push(month)
+        }
+
+        return this.monthly_playcounts
+    }
+}
+
+export class UserStatistics {
+    constructor(id, mode){
+        this.id = id
+        this.mode = mode
+        this.statistics = []
+    }
+
+    async load(){
+        //! Maybe int to string converter needed
+        let statistics = await database.db("mino").collection("stats").findOne({ id: this.id })
+
+        if(statistics == null){
+            logger.red("User has no stats").send().save(`./.data/logs/error.txt`)
+            return {}
+        }
+
+        statistics.global_rank = calculateRank(this.id)
+        statistics.user = new UserCompact(this.id)
+
+        return this.statistics
+    }
+
 }
 
 export default {
     User,
-    UserCompact
+    UserCompact,
+    UserAccountHistory,
+    UserBadge,
+    UserGroup,
+    UserMonthlyPlaycount,
+    UserStatistics
 }
