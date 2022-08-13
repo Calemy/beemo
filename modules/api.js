@@ -9,7 +9,7 @@ import spectator from "../api/spectator.js"
 import register from "../api/register.js"
 
 
-const fastify = f({ logger: true })
+const fastify = f({ logger: true, trustProxy: true })
 
 export default async function(){
     fastify.register(multipart, { attachFieldsToBody: true })
@@ -19,7 +19,7 @@ export default async function(){
     fastify.register(spectator, { prefix: '/spectator'})
 
     fastify.get('/', async (req, reply) => {
-        return "Version 0.2.14 - by Nanoo <3\n"+
+        return "Version 0.3.0 - by Nanoo <3\n"+
         "Consider contributing or donating to this project!\n"+
         "Repository: https://github.com/calemy/beemo"
     })

@@ -53,8 +53,11 @@ export default {
     previous_usernames: async function(){
         return []
     },
-    rank_history: async function(){
-        return []
+    rank_history: async function(mode){
+        return {
+            mode: mode,
+            data: []
+        }
     },
     ranked_beatmapset_count: async function(){
         return 0

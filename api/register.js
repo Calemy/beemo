@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt"
 import crypto from "node:crypto"
+import fetch from "node-fetch"
 import { User } from "../constants/player.js"
 import database from "../helper/database.js"
 
@@ -22,6 +23,9 @@ export default async function(req, reply){
 
     let init = await database.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
 
+    const countryRequest = await fetch(`https://ip.zxq.co/${req.ips[req.ips.length - 1]}`)
+    const { country } = await countryRequest.json()
+
     if(init.length < 1) init = [{ id: 2 }]
 
     await database.db("lazer").collection("users").insertOne({
@@ -35,10 +39,35 @@ export default async function(req, reply){
         latest_activity: Math.floor(Date.now() / 1000),
         donator_end: 0,
         donator_time: 0,
-        country: "BR" //TODO: Determine User Location
+        country: country
     })
 
     //TODO: Create Stats
+
+    await database.db("lazer").collection("stats").insertOne({
+        id: parseInt(init[0].id) + 1,
+        grade_counts: {
+            a: 0,
+            s: 0,
+            sh: 0,
+            ss: 0,
+            ssh: 0
+        },
+        hit_accuracy: 0,
+        is_ranked: false,
+        level : {
+            current: 0,
+            progress: 0
+        },
+        maximum_combo: 0,
+        play_count: 0,
+        play_time: 0,
+        pp: 0,
+        ranked_score: 0,
+        replays_watched_by_others: 0,
+        total_hits: 0,
+        total_score: 0
+    })
 
     const u = await database.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
 
@@ -46,7 +75,7 @@ export default async function(req, reply){
 
     const load = [];
 
-    for(modul of ["blocks", "cover", "follow_user_mapping", "friends", "unread_pm_count", "user_preferences"]){
+    for(let modul of ["blocks", "cover", "follow_user_mapping", "friends", "unread_pm_count", "user_preferences"]){
         load.push(user.loadModule(modul))
     }
 

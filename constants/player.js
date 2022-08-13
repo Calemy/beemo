@@ -1,9 +1,11 @@
+
+import cosmetics from "./cosmetics.js"
+import extras from "./playerExtra.js"
+import { sessions } from "./cache.js"
 import database from "../helper/database.js"
 import logger from "../helper/logger.js"
-import { sessions } from "./cache.js"
-import cosmetics from "./cosmetics.js"
 import { calculateRank } from "../helper/server.js"
-import extras from "./playerExtra.js"
+import { url } from "../config.js"
 
 export class UserCompact {
     //!i hate peppy
@@ -25,7 +27,7 @@ export class UserCompact {
     async load(){
         const user = await database.db("lazer").collection("users").findOne({ id: this.id })
         this.username = user.username
-        this.avatar_url = `https:\/\/a.lemres.de\/${this.id + 998}`
+        this.avatar_url = `https:\/\/${url.avatar}\/${this.id + 998}`
         await this.loadModule("country", user.country)
         this.join_date = new Date(user.register_date * 1000).toISOString()
         this.last_visit = new Date(user.latest_activity * 1000).toISOString()
@@ -117,7 +119,7 @@ export class UserAccountHistory {
     }
 
     async load(){
-        const incidents = await database.db("mino").collection("incidents").find({ user: this.id }).project({ user: 0 }).sort({ timestamp: -1 }).toArray()
+        const incidents = await database.db("lazer").collection("incidents").find({ user: this.id }).project({ user: 0 }).sort({ timestamp: -1 }).toArray()
         if(incidents.length < 1) return this.incidents
         for(let i = 0; i < incidents.length; i++){
             let incident = incidents[i]
@@ -137,7 +139,7 @@ export class UserBadge {
     }
 
     async load(){
-        const badges = await database.db("mino").collection("cosmetics").find({ id: this.id }).sort({ "badges.awarded_at": -1 }).toArray()
+        const badges = await database.db("lazer").collection("cosmetics").find({ id: this.id }).sort({ "badges.awarded_at": -1 }).toArray()
         if(badges.length < 1) return this.badges
         for(let i = 0; i < badges.length; i++){
             const userBadge = badges[i]
@@ -165,7 +167,7 @@ export class UserGroup {
     }
 
     async load(){
-        const group = await database.db("mino").collection("cosmetics").find({ id: this.id }).sort({ "groups.id" : 1 }).toArray()
+        const group = await database.db("lazer").collection("cosmetics").find({ id: this.id }).sort({ "groups.id" : 1 }).toArray()
         if(group.length < 1) return this.groups
 
         for(let i = 0; i < groups.length; i++){
@@ -189,7 +191,7 @@ export class UserMonthlyPlaycount {
     }
 
     async load(){
-        const playcount = await database.db("mino").collection("playcount").find({ id: this.id }).sort({ start_date : 1 }).toArray()
+        const playcount = await database.db("lazer").collection("playcount").find({ id: this.id }).sort({ start_date : 1 }).toArray()
         if(playcount.length < 1) return this.monthly_playcounts
 
         for(let i = 0; i < playcount.length; i++) {
@@ -208,20 +210,27 @@ export class UserStatistics {
     constructor(id, mode){
         this.id = id
         this.mode = mode
-        this.statistics = []
+        this.statistics = {}
     }
 
     async load(){
         //! Maybe int to string converter needed
-        let statistics = await database.db("mino").collection("stats").findOne({ id: this.id })
+        let statistics = await database.db("lazer").collection("stats").findOne({ id: this.id })
 
         if(statistics == null){
-            logger.red("User has no stats").send().save(`./.data/logs/error.txt`)
+            logger.red("User has no stats").send()
             return {}
         }
 
-        statistics.global_rank = calculateRank(this.id)
+        statistics.global_rank = await calculateRank(this.id)
+        statistics.country_rank = await calculateRank(this.id)
+        statistics.rank = {
+            global: await calculateRank(this.id),
+            country: await calculateRank(this.id)
+        }
         statistics.user = new UserCompact(this.id)
+
+        this.statistics = statistics
 
         return this.statistics
     }
