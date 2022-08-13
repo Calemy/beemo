@@ -1,5 +1,4 @@
 import fetch from "node-fetch"
-import { UserCompact } from "../constants/player.js"
 import { Score } from "../constants/structures.js"
 import { sessions } from "../constants/cache.js"
 import database from "../helper/database.js"
@@ -7,7 +6,6 @@ import get from "../helper/osu.js"
 import { url } from "../config.js"
 
 export default async function(fastify, opts){
-
     fastify.get('/lookup', async (req, reply) => { //* Beatmap Information
         const search = await database.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.params.id) })
 
@@ -38,6 +36,7 @@ export default async function(fastify, opts){
             scores : result
         }
     })
+
     fastify.get('/:id/scores', async (req, reply) => {
         return {
             scores : []
@@ -49,24 +48,19 @@ export default async function(fastify, opts){
         const beatmap = req.body.beatmap_hash.value //beatmap_md5
         const mode = req.body.ruleset_id.value
 
-        const session = sessions.access.get(req.headers.authorization.split(" ")[1])
+        const session = sessions.get(req.headers.authorization.split(" ")[1])
 
         const time = Math.floor(Date.now() / 1000)
         const date = new Date(time).toISOString()
 
-        await database.client.connect()
-        let latest = await database.client.db("lazer").collection("scores").findOne({}, {sort: { id: -1 }})
-        await database.client.close()
-
-
-
-        await database.client.connect()
-        let map = await database.client.db("lazer").collection("beatmaps").findOne({checksum: beatmap})
-        await database.client.close()
+        let [ latest, map ] = await Promise.all([
+            database.db("lazer").collection("scores").findOne({}, {sort: { id: -1 }}),
+            database.db("lazer").collection("beatmaps").findOne({ checksum: beatmap })
+        ])
 
         if(!latest || latest == null) latest = { id: 0 }
 
-        database.mongoRequest("scores", "insertOne", {
+        database.db("lazer").collection("scores").insertOne({
             id: latest.id + 1,
             userid: session.id,
             beatmap: beatmap,
@@ -85,13 +79,9 @@ export default async function(fastify, opts){
     })
 
     fastify.put('/:bid/solo/scores/:id', async (req, reply) => { //* Post-game Submission
-        const session = sessions.access.get(req.headers.authorization.split(" ")[1])
         const time = Math.floor(Date.now() / 1000)
-        const date = new Date(time).toISOString()
 
-        await database.client.connect()
-        const initial = await database.client.db("lazer").collection("scores").findOne({id: parseInt(req.params.id) })
-        await database.client.close()
+        const initial = await database.db("lazer").collection("scores").findOne({id: parseInt(req.params.id) })
 
         if(initial == null) return { error: "Couldn't find score" }
 
@@ -103,21 +93,16 @@ export default async function(fastify, opts){
             let c = 0
             if(!score.passed) return c
             c++
-            await database.client.connect()
-            const best = await database.client.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap }).sort({total_score: -1}).toArray()
-            await database.client.close()
+
+            let best = await database.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap }).sort({total_score: -1}).toArray()
 
             c++ //Map ranked, c++
 
-            if(best != null){
+            if(best.length > 0){
                 if(score.total_score < best[0].total_score) return c
+                best[0].completed = 2
+                await database.db("lazer").collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
             }
-
-            best[0].completed = 2
-
-            await database.client.connect()
-            await database.client.db("lazer").collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
-            await database.client.close()
 
             c++ //best score, c++
 
@@ -146,10 +131,7 @@ export default async function(fastify, opts){
         score.legacy_fc = null
         //Calculate rosu-pp || for now using mino LUL
 
-        
-
-        await database.client.connect()
-        await database.client.db("lazer").collection("scores").findOneAndUpdate({id: parseInt(req.params.id) }, { $set : {
+        await database.db("lazer").collection("scores").findOneAndUpdate({id: parseInt(req.params.id) }, { $set : {
             accuracy: score.accuracy,
             build_id: 6519,
             ended_at: time,
@@ -166,37 +148,9 @@ export default async function(fastify, opts){
             type: score.type,
         }
         })
-        await database.client.close()
 
         //Kagerou daze
 
-        return {
-            accuracy: score.accuracy,
-            beatmap_id: req.params.bid,
-            best_id: null,
-            build_id: 6519, //Try to find out how this works
-            current_user_attributes : {
-                pin : {
-                    is_pinned: false,
-                    score_id: req.params.id,
-                    score_type: "solo_score"
-                }
-            },
-            ended_at: date, //????
-            id: req.params.id,
-            legacy_perfect: null, //? why legacy
-            max_combo: score.max_combo,
-            mods: score.mods,
-            passed: score.passed,
-            pp: score.pp,
-            rank: score.rank,
-            replay: false, //TODO: Replay system
-            ruleset_id: score.ruleset_id,
-            started_at: new Date(initial.start).toISOString(), //????
-            statistics: score.statistics,
-            total_score: score.total_score,
-            type: "solo_score",
-            user_id: session.id
-        }
-    } )
+        return await new Score(parseInt(req.params.id)).load()
+    })
 }
