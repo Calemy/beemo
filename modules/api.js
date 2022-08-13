@@ -4,8 +4,8 @@ import { url, port } from "../config.js"
 import logger from "../helper/logger.js"
 import oauth from "../api/oauth.js"
 import v2 from "../api/v2.js"
-// import multiplayer from "../api/multiplayer.js"
-// import spectator from "../api/spectator.js"
+import multiplayer from "../api/multiplayer.js"
+import spectator from "../api/spectator.js"
 import register from "../api/register.js"
 
 
@@ -15,8 +15,8 @@ export default async function(){
     fastify.register(multipart, { attachFieldsToBody: true })
     fastify.register(oauth, { prefix: '/oauth' })
     fastify.register(v2, { prefix: '/api/v2'  })
-    // fastify.register(multiplayer, { prefix: '/multiplayer'})
-    // fastify.register(spectator, { prefix: '/spectator'})
+    fastify.register(multiplayer, { prefix: '/multiplayer'})
+    fastify.register(spectator, { prefix: '/spectator'})
 
     fastify.get('/', async (req, reply) => {
         return "Version 0.2.14 - by Nanoo <3\n"+

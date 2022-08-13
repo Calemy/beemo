@@ -1,13 +1,13 @@
 import database from "../helper/database.js"
 import { sessions, tokens } from "../constants/cache.js"
 import { url } from "../config.js"
-// import beatmaps from "./beatmaps.js"
-// import sets from "./sets.js"
+import beatmaps from "./beatmaps.js"
+import sets from "./sets.js"
 
 export default async function(fastify, opts){
 
-    // fastify.register(require('./beatmaps'), { prefix: '/beatmaps'})
-    // fastify.register(require('./sets'), { prefix: '/beatmapsets'})
+    fastify.register(beatmaps, { prefix: '/beatmaps'})
+    fastify.register(sets, { prefix: '/beatmapsets'})
 
     fastify.get('/comments', async (req, reply) => {
       return {
@@ -18,7 +18,7 @@ export default async function(fastify, opts){
     fastify.get("/me/", async (req, reply) => {
 
       const session = sessions.get(req.headers.authorization.split(" ")[1])
-      if(!session) return
+      if(!session) return {}
       const user = await database.db("lazer").collection("users").findOne({id: session.id})
 
         reply.send({

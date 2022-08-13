@@ -26,7 +26,7 @@ export class UserCompact {
         const user = await database.db("lazer").collection("users").findOne({ id: this.id })
         this.username = user.username
         this.avatar_url = `https:\/\/a.lemres.de\/${this.id + 998}`
-        this.country = await this.loadModule("country", user.country)
+        await this.loadModule("country", user.country)
         this.join_date = new Date(user.register_date * 1000).toISOString()
         this.last_visit = new Date(user.latest_activity * 1000).toISOString()
         this.default_group = "default"

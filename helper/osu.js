@@ -57,7 +57,7 @@ async function login(){
     }
 }
 
-async function get(url) {
+export default async function get(url) {
     const key = await login()
     try {
         const request = await fetch(url, {
@@ -75,5 +75,3 @@ async function get(url) {
         return await get(url)
     }
 }
-
-export default get

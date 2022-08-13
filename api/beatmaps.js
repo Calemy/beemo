@@ -1,99 +1,37 @@
-const sessions = require('../constants/cache')
-const database = require('../helper/database')
-const fetch = require('node-fetch')
-const auth = require('../helper/auth')
-const { url } = require('../config')
-const { UserCompact } = require('../constants/player')
-const Logger = require('cutesy.js')
-module.exports = async function(fastify, opts){
+import fetch from "node-fetch"
+import { UserCompact } from "../constants/player.js"
+import { Score } from "../constants/structures.js"
+import { sessions } from "../constants/cache.js"
+import database from "../helper/database.js"
+import get from "../helper/osu.js"
+import { url } from "../config.js"
+
+export default async function(fastify, opts){
 
     fastify.get('/lookup', async (req, reply) => { //* Beatmap Information
-        const key = await auth.login()
-
-        const search = await database.mongoRequest("beatmaps", "findOne", { id: parseInt(req.query.id) })
+        const search = await database.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.params.id) })
 
         if(search != null) return search
 
-        const request = await fetch(`https://osu.ppy.sh${req.url}`, {
-            headers: {
-                "Authorization": `Bearer ${key}`
-            },
-        })
-        
-        let response = await request.json()
+        const response = await get(`https://osu.ppy.sh${req.url}`)
+        const set = await get(`https://osu.ppy.sh/api/v2/beatmapsets/${response.beatmapset_id}`)
 
-        const setRequest = await fetch(`https://osu.ppy.sh/api/v2/beatmapsets/${response.beatmapset_id}`, {
-            headers: {
-                "Authorization": `Bearer ${key}`
-            }
-        })
-        const set = await setRequest.json()
-
-        for(var i = 0; i < set.beatmaps.length; i++) {
-            await database.mongoRequest("beatmaps", "insertOne", set.beatmaps[i])
-        }
+        await database.db("lazer").collection("beatmaps").insertMany(set.beatmaps)
 
         return response
-
     })
 
     fastify.get('/:id/solo-scores', async (req, reply) => { //* Leaderboards
 
-        await fetch(`https://${url}/api/v2/beatmaps/lookup?id=${req.params.id}`)
+        await fetch(`https://${url.base}/api/v2/beatmaps/lookup?id=${req.params.id}`)
 
-        await database.client.connect()
-        const beatmap = await database.client.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.params.id) })
-        await database.client.close()
-
-        await database.client.connect()
-        const scores = await database.client.db("lazer").collection("scores").find({ beatmap: beatmap.checksum, completed: 3 }).sort({total_score : -1}).toArray()
-        await database.client.close()
+        const beatmap = await database.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.params.id) })
+        const scores = await database.db("lazer").collection("scores").find({ beatmap: beatmap.checksum, completed: 3 }).sort({total_score : -1}).toArray()
         
         const result = []
 
         for(var i = 0; i < scores.length; i++){
-            score = scores[i];
-
-            let u = new UserCompact(score.userid)
-            
-            await u.load()
-
-            u.country = {
-                code: "BR",
-                name: "Brazil"
-            }
-
-            u.cover = {
-                custom_url: 'https://assets.ppy.sh/user-profile-covers/8945180/edc51066bbded8278b2755e67ed695b7658e0c4d74994a25e43c985918f44906.png',
-                url: 'https://assets.ppy.sh/user-profile-covers/8945180/edc51066bbded8278b2755e67ed695b7658e0c4d74994a25e43c985918f44906.png',
-                id: null
-            }
-
-            result.push({
-                accuracy: score.accuracy,
-                beatmap_id: req.params.id,
-                build_id: 6489,
-                ended_at: new Date(score.ended_at * 1000).toISOString(),
-                max_combo: score.max_combo,
-                mods: score.mods,
-                passed: Boolean(score.completed),
-                rank: score.rank,
-                ruleset_id: score.mode,
-                started_at: new Date(score.start * 1000).toISOString(),
-                statistics : score.statistics,
-                total_score: score.total_score,
-                user_id: score.userid,
-                best_id: null,
-                id: score.id,
-                legacy_perfect: score.legacy_perfect,
-                pp: 0,
-                replay: false,
-                type: 'solo_score',
-                current_user_attributes : {
-                    pin : null
-                },
-                user : u
-            })
+            result.push(await new Score(scores[i].id).load())
         }
 
         return {
