@@ -19,7 +19,7 @@ export default async function(){
     fastify.register(spectator, { prefix: '/spectator'})
 
     fastify.get('/', async (req, reply) => {
-        return "Version 1.0.0 - by Nanoo <3\n"+
+        return "Version 1.0.1 - by Nanoo <3\n"+
         "Consider contributing or donating to this project!\n"+
         "Repository: https://github.com/calemy/beemo"
     })

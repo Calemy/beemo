@@ -111,7 +111,7 @@ export default async function(fastify, opts){
 
         async function calculateCompletion(){
             let c = 0
-            if(score.passed) return c
+            if(!score.passed) return c
             c++
 
             let best = await database.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap }).sort({total_score: -1}).toArray()
@@ -127,6 +127,7 @@ export default async function(fastify, opts){
                 }
             } else {
                 c++ //best score, c++   
+                stats.ranked_score += score.total_score
             }
 
             return c
