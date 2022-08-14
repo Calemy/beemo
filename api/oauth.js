@@ -1,13 +1,16 @@
 import bcrypt from "bcrypt";
 import crypto from "node:crypto"
-import database from "../helper/database.js"
 import { sessions, tokens } from "../constants/cache.js"
+import database from "../helper/database.js"
+import logger from "../helper/logger.js"
 
 export default async function(fastify, opts){
     fastify.post('/token', async (req, reply) => {
         const username = req.body?.username?.value?.toLowerCase().replaceAll(" ", "_");
         const password = req.body?.password?.value
         const refresh_token = req.body?.refresh_token?.value
+
+        logger.purpleBlue(`Trying to login ${username}`).send()
 
         if(refresh_token){
             let session = tokens.get(refresh_token)
@@ -19,13 +22,22 @@ export default async function(fastify, opts){
 
         const user = await database.db("lazer").collection("users").findOne({ username_safe: username })
 
-        if(user == null) return error("This Username does not exist")
+        if(user == null){
+            logger.red("User not found: " + username).send()
+            return error("This Username does not exist")
+        } 
 
         const hash = crypto.createHash('sha256').update(password).digest('base64');
         const check = await bcrypt.compare(hash, user.password)
 
-        if(!check) return error("Invalid Password")
-        if(!(user.privileges & 1)) return error("You are restricted")
+        if(!check){
+            logger.red("Incorrect password for " + username).send()
+            return error("Invalid Password")
+        } 
+        if(!(user.privileges & 1)){
+            logger.red(`${username} is restricted`)
+            return error("You are restricted")
+        } 
 
         async function error(err){
             return reply.status(400).send({
@@ -53,6 +65,8 @@ export default async function(fastify, opts){
 
         sessions.set(session.access_token, session, 86400)
         tokens.set(session.refresh_token, session)
+        
+        logger.green(`Successfully logged in ${user.username}`).send()
 
         return reply.code(200).send({
             "token_type": session.token_type,

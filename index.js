@@ -5,7 +5,7 @@ import api from "./modules/api.js"
 async function main(){
     await database.connect()
     logger.purpleBlue("Connected to database").send()
-    logger.rainbow("Started Beemo v1.0.1").purpleBlue().send()
+    logger.rainbow("Started Beemo v1.0.2").purpleBlue().send()
     api()
 }
 
