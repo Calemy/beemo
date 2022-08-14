@@ -5,6 +5,7 @@ import database from "../helper/database.js"
 import get from "../helper/osu.js"
 import logger from "../helper/logger.js"
 import { url } from "../config.js"
+import { updateRanks } from "../modules/cron.js"
 
 export default async function(fastify, opts){
     fastify.get('/lookup', async (req, reply) => { //* Beatmap Information
@@ -203,6 +204,8 @@ export default async function(fastify, opts){
         //Kagerou daze
 
         logger.green(`Submitting score for ${initial.userid} - `)
+
+        updateRanks()
 
         switch(score.completed){
             case 0:

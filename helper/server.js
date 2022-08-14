@@ -1,5 +1,5 @@
-import database from "../helper/database.js"
+import { ranks } from "../constants/cache.js"
 
 export async function calculateRank(id){
-    return 1
+    return ranks.indexOf(id) + 1
 }
