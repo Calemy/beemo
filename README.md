@@ -1,4 +1,3 @@
-
 # Beemo
 
 a javascript osu!bancho implementation for lazer because i can't typescript
@@ -140,4 +139,3 @@ maintain to what was possible for us to reduce the code to without losing import
 If you have any feedback, please reach out to us on the discord server.
 
 https://discord.gg/JgpDZ4gaAs
-
