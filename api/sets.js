@@ -1,18 +1,8 @@
-const auth = require('../helper/auth')
-const fetch = require('node-fetch')
+import get from '../helper/osu.js'
 
-module.exports = async function(fastify, opts){
+export default async function(fastify, opts){
     fastify.get('/:id', async (req, reply) => {
-        const key = await auth.login()
-
-        const request = await fetch(`https://osu.ppy.sh${req.url}`, {
-            headers: {
-                "Authorization": `Bearer ${key}`
-            },
-        })
-
-        return request.json()
-
+        return await get(`https://osu.ppy.sh${req.url}`)
     })
 
     fastify.get(`/:id/download`, async (req, reply) => {

@@ -1,14 +1,14 @@
-const database = require("../helper/database")
-const crypto = require('node:crypto')
-const bcrypt = require('bcrypt')
+import bcrypt from "bcrypt"
+import crypto from "node:crypto"
+import fetch from "node-fetch"
+import { User } from "../constants/player.js"
+import database from "../helper/database.js"
 
-module.exports = async function(req, reply){
+export default async function(req, reply){
     const [ username, email, password ] = [req.body["user[username]"].value, req.body["user[user_email]"].value, req.body["user[password]"].value]
 
     const username_safe = username.toLowerCase().replaceAll(" ", "_")
-    await database.client.connect()
-    const check = await database.client.db("lazer").collection("users").findOne({ $or : [{ username_safe: username_safe}, { email: email }] })
-    await database.client.close()
+    const check = await database.db("lazer").collection("users").findOne({ $or : [{ username_safe: username_safe}, { email: email }] })
 
     if(check != null){
         let form_error = { user : {} }
@@ -21,13 +21,14 @@ module.exports = async function(req, reply){
 
     const hashed = await bcrypt.hash(hash, 10)
 
-    await database.client.connect()
-    let init = await database.client.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
-    await database.client.close()
+    let init = await database.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
+
+    const countryRequest = await fetch(`https://ip.zxq.co/${req.ips[req.ips.length - 1]}`)
+    const { country } = await countryRequest.json()
+
     if(init.length < 1) init = [{ id: 2 }]
 
-    await database.client.connect()
-    await database.client.db("lazer").collection("users").insertOne({
+    await database.db("lazer").collection("users").insertOne({
         id: parseInt(init[0].id) + 1,
         username: username,
         username_safe: username_safe,
@@ -38,103 +39,52 @@ module.exports = async function(req, reply){
         latest_activity: Math.floor(Date.now() / 1000),
         donator_end: 0,
         donator_time: 0,
-        country: "XX"
+        country: country
     })
 
-    await database.client.close()
+    //TODO: Create Stats
 
-    await database.client.connect()
-    const user = await database.client.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
-    await database.client.close()
+    await database.db("lazer").collection("stats").insertOne({
+        id: parseInt(init[0].id) + 1,
+        grade_counts: {
+            a: 0,
+            s: 0,
+            sh: 0,
+            ss: 0,
+            ssh: 0
+        },
+        hit_accuracy: 0,
+        is_ranked: false,
+        level : {
+            current: 0,
+            progress: 0
+        },
+        maximum_combo: 0,
+        play_count: 0,
+        play_time: 0,
+        pp: 0,
+        ranked_score: 0,
+        replays_watched_by_others: 0,
+        total_hits: 0,
+        total_score: 0
+    })
 
-    return {
-        "avatar_url": "https:\/\/osu.ppy.sh\/images\/layout\/avatar-guest.png",
-        "country_code": "DE", //TODO: find out how to get country (ip locator?)
-        "default_group": "default",
-        "id": user.id,
-        "is_active":true, //? Leaderboard
-        "is_bot":false,
-        "is_deleted":false,
-        "is_online":true,
-        "is_supporter":false,
-        "last_visit": new Date().toISOString(),
-        "pm_friends_only":false,
-        "profile_colour":null,
-        "username": username,
-        "cover_url":"https:\/\/osu.ppy.sh\/images\/headers\/profile-covers\/c5.jpg",
-        "discord":null,
-        "has_supported":false,
-        "interests":null,
-        "join_date": new Date().toISOString(),
-        "kudosu":{
-            "total":0,
-            "available":0
-        },
-        "location":null,
-        "max_blocks":50,
-        "max_friends":250,
-        "occupation":null,
-        "playmode":"osu",
-        "playstyle":null,
-        "post_count":0,
-        "profile_order":[
-            "me",
-            "recent_activity",
-            "top_ranks",
-            "medals",
-            "historical",
-            "beatmaps",
-            "kudosu"
-        ],
-        "title":null,
-        "title_url":null,
-        "twitter":null,
-        "website":null,
-        "country":{
-            "code":"DE",
-            "name":"Germany"
-        },
-        "cover":{
-            "custom_url":null,
-            "url":"https:\/\/osu.ppy.sh\/images\/headers\/profile-covers\/c5.jpg",
-            "id":"5"
-        },
-        "is_admin":false,
-        "is_bng":false,
-        "is_full_bn":false,
-        "is_gmt":false,
-        "is_limited_bn":false,
-        "is_moderator":false,
-        "is_nat":false,
-        "is_restricted":false,
-        "is_silenced":false,
-        "blocks":[
-            
-        ],
-        "follow_user_mapping":[
-            
-        ],
-        "friends":[
-            
-        ],
-        "groups":[
-            
-        ],
-        "unread_pm_count":0,
-        "user_preferences":{
-            "audio_autoplay":false,
-            "audio_muted":false,
-            "audio_volume":0.45,
-            "beatmapset_card_size":"normal",
-            "beatmapset_download":"all",
-            "beatmapset_show_nsfw":true,
-            "beatmapset_title_show_original":false,
-            "comments_show_deleted":false,
-            "forum_posts_show_deleted":true,
-            "profile_cover_expanded":true,
-            "user_list_filter":"all",
-            "user_list_sort":"last_visit",
-            "user_list_view":"card"
-        }
+    const u = await database.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
+
+    let user = await new User(u.id).load()
+
+    const load = [];
+
+    for(let modul of ["blocks", "cover", "follow_user_mapping", "friends", "unread_pm_count", "user_preferences"]){
+        load.push(user.loadModule(modul))
     }
+
+    load.push(user.loadModule("country", u.country))
+    load.push(user.loadModule("is_restricted", u.privileges))
+    load.push(user.loadGroups())
+    await Promise.all(load)
+
+    user.country_code = u.country
+
+    return user
 }

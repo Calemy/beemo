@@ -1,16 +1,10 @@
-module.exports = {
-    database : {
-        host: "localhost",
-        user: "Beemo",
-        password: "CoolBeemoPassword",
-        database: "lazer"
-    },
-    login : {
-        username: "",
-        password: "",
-        id: 5, //don't touch that pls
-        secret: "FGc9GAtyHzeQDshWP5Ah7dega8hJACAJpQtw6OXk" //don't touch that too pls
-    },
-    url: "lemres.de",
-    port: 6969
+export const bancho = {
+    username: "",
+    password: ""
+}
+export const database = "mongodb://127.0.0.1:27017"
+export const port = 6969
+export const url = {
+    base: "lemres.de",
+    avatar: "a.lemres.de"
 }
