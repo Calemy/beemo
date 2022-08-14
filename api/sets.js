@@ -7,7 +7,7 @@ export default async function(fastify, opts){
     })
 
     fastify.get(`/:id/download`, async (req, reply) => {
-        logger.purpleBlue(`Downloading ${id} from Mino`)
+        logger.purpleBlue(`Downloading ${req.params.id} from Mino`).send()
         reply.redirect(302, `https://catboy.best/d/${req.params.id}`)
     })
 }
