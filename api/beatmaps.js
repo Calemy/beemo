@@ -114,7 +114,7 @@ export default async function(fastify, opts){
             if(!score.passed) return c
             c++
 
-            let best = await database.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap }).sort({total_score: -1}).toArray()
+            let best = await database.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap, completed: { $gt: 1 } }).sort({total_score: -1}).toArray()
             c++ //Map ranked, c++
 
             if(best.length > 0){
@@ -202,7 +202,24 @@ export default async function(fastify, opts){
 
         //Kagerou daze
 
-        logger.green(`Submitting score for ${initial.userid}`).send()
+        logger.green(`Submitting score for ${initial.userid} - `)
+
+        switch(score.completed){
+            case 0:
+                logger.red("Quit")
+                break;
+            case 1:
+                logger.yellow("Completed")
+                break;
+            case 2:
+                logger.yellow("Completed but not Ranked")
+                break;
+            case 3:
+                logger.green("Ranked")
+                break;
+        }
+
+        logger.green().send()
 
         return await new Score(parseInt(req.params.id)).load()
     })
