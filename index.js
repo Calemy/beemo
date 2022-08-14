@@ -4,8 +4,8 @@ import api from "./modules/api.js"
 
 async function main(){
     await database.connect()
-    logger.green("Connected to database").send()
-    logger.rainbow("Started jazer v0.2.0").send()
+    logger.purpleBlue("Connected to database").send()
+    logger.rainbow("Started Beemo v1.0.0").purpleBlue().send()
     api()
 }
 

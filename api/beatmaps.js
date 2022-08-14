@@ -3,16 +3,22 @@ import { Score } from "../constants/structures.js"
 import { sessions } from "../constants/cache.js"
 import database from "../helper/database.js"
 import get from "../helper/osu.js"
+import logger from "../helper/logger.js"
 import { url } from "../config.js"
 
 export default async function(fastify, opts){
     fastify.get('/lookup', async (req, reply) => { //* Beatmap Information
-        const search = await database.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.params.id) })
+        logger.purpleBlue("Loading Beatmap information for " + req.query.id).send()
+        const search = await database.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.query.id) })
 
         if(search != null) return search
 
+        logger.yellow("Beatmap not found, searching on Bancho").send()
+
         const response = await get(`https://osu.ppy.sh${req.url}`)
         const set = await get(`https://osu.ppy.sh/api/v2/beatmapsets/${response.beatmapset_id}`)
+
+        logger.green(`Adding Beatmaps from ${set.title}`).send()
 
         await database.db("lazer").collection("beatmaps").insertMany(set.beatmaps)
 
@@ -48,7 +54,15 @@ export default async function(fastify, opts){
         const beatmap = req.body.beatmap_hash.value //beatmap_md5
         const mode = req.body.ruleset_id.value
 
+        if(mode != 0) return reply.code(500).send({
+            statusCode: 500,
+            error: "This Mode is not supported",
+            message: "This Mode is not supported"
+        })
+
         const session = sessions.get(req.headers.authorization.split(" ")[1])
+
+        logger.purpleBlue(`${session.id} started a score`).send()
 
         const time = Math.floor(Date.now() / 1000)
         const date = new Date(time).toISOString()
@@ -87,24 +101,33 @@ export default async function(fastify, opts){
 
         let score = req.body
 
+        let scores = await database.db("lazer").collection("scores").find({ userid: initial.userid, completed: 3}).sort({total_score: -1}).limit(100).toArray()
+        let beatmap = await database.db("lazer").collection("beatmaps").findOne({checksum: initial.beatmap})
+        let stats = await database.db("lazer").collection("stats").findOne({id: initial.userid })
+        if(stats == null) return
+        if(beatmap == null) return
+
         score.completed = await calculateCompletion()
 
         async function calculateCompletion(){
             let c = 0
-            if(!score.passed) return c
+            if(score.passed) return c
             c++
 
             let best = await database.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap }).sort({total_score: -1}).toArray()
-
             c++ //Map ranked, c++
 
             if(best.length > 0){
-                if(score.total_score < best[0].total_score) return c
-                best[0].completed = 2
-                await database.db("lazer").collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
+                if(score.total_score > best[0].total_score){
+                    c++
+                    best[0].completed = 2
+                    await database.db("lazer").collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
+                    stats.ranked_score -= best[0].total_score
+                    stats.ranked_score += score.total_score
+                }
+            } else {
+                c++ //best score, c++   
             }
-
-            c++ //best score, c++
 
             return c
         }
@@ -120,6 +143,14 @@ export default async function(fastify, opts){
             const ppData = await ppRequest.json()
 
             return ppData.pp[acc].pp
+        }
+
+        async function calculateAcc(){
+            let total = 0;
+            for(var i = 0; i < scores.length; i++){
+                total += scores[i].accuracy
+            }
+            return total / scores.length
         }
         
         
@@ -149,7 +180,28 @@ export default async function(fastify, opts){
         }
         })
 
+        const playtime = time - initial.start
+
+        if(score.max_combo > stats.maximum_combo) stats.maximum_combo = score.max_combo
+
+        stats.pp += score.pp
+        stats.play_count += 1
+        stats.play_time += playtime
+        stats.total_score += score.total_score
+        for(let rank of ["a", "s", "sh", "sh", "ssh"]){
+            if(score.rank.toLowerCase() == rank){
+                stats.grade_counts[rank] += 1
+            }
+        }
+
+        stats.hit_accuracy = await calculateAcc()
+
+
+        await database.db("lazer").collection("stats").findOneAndUpdate({id: initial.userid }, { $set : stats })
+
         //Kagerou daze
+
+        logger.green(`Submitting score for ${initial.userid}`).send()
 
         return await new Score(parseInt(req.params.id)).load()
     })

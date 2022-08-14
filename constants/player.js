@@ -230,6 +230,8 @@ export class UserStatistics {
         }
         statistics.user = new UserCompact(this.id)
 
+        statistics.hit_accuracy = parseFloat((statistics.hit_accuracy * 100).toFixed(3))
+
         this.statistics = statistics
 
         return this.statistics
