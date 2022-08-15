@@ -1,5 +1,5 @@
 import api from "./modules/api.js"
-import { updateRanks, loadChannel } from "./modules/cron.js"
+import { updateRanks, loadChannels } from "./modules/cron.js"
 import database from "./helper/database.js"
 import logger from "./helper/logger.js"
 
