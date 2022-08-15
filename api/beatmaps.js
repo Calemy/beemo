@@ -149,9 +149,13 @@ export default async function(fastify, opts){
 
         async function calculateAcc(){
             let total = 0;
+
+            if(scores.length == 0) return score.accuracy
+
             for(var i = 0; i < scores.length; i++){
                 total += scores[i].accuracy
             }
+
             return total / scores.length
         }
         
