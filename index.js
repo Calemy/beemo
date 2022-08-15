@@ -1,5 +1,5 @@
 import api from "./modules/api.js"
-import { updateRanks } from "./modules/cron.js"
+import { updateRanks, loadChannel } from "./modules/cron.js"
 import database from "./helper/database.js"
 import logger from "./helper/logger.js"
 
@@ -8,7 +8,9 @@ async function main(){
     logger.purpleBlue("Connected to database").send()
     await updateRanks()
     logger.purpleBlue("Updated ranks").send()
-    logger.rainbow("Started Beemo v1.0.4").purpleBlue().send()
+    await loadChannel()
+    logger.purpleBlue("Loaded channels").send()
+    logger.rainbow("Started Beemo v1.0.5").purpleBlue().send()
     api()
 }
 

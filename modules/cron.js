@@ -18,4 +18,24 @@ export async function updateRanks(){
         users[i].is_ranked = true
         database.db("lazer").collection("stats").findOneAndUpdate({ id: users[i].id }, { $set: users[i] })
     }
+
+    return 1
+}
+
+export async function loadChannels(){
+    const channels = await database.db("lazer").collection("channels").find({}).limit(1).toArray()
+
+    if(channels.length > 0) return;
+
+    await database.db("lazer").collection("channels").insertOne({
+        id: 1,
+        name: "#osu",
+        description: "Talk here with everyone!",
+        icon: null,
+        type: "PUBLIC",
+        moderated: false,
+        messages: []
+    })
+
+    return 1
 }

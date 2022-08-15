@@ -49,6 +49,73 @@ export class Score {
     }
 }
 
+export class ChatChannel {
+    constructor(id, user){
+        this.channel_id = id
+        this.user = user
+    }
+
+    async load(){
+
+        const channel = await database.db("lazer").collection("channels").findOne({ id: this.channel_id })
+        const user = await database.db("lazer").collection("userStatus").findOne({ id: this.user })
+
+        if(channel == null){
+            logger.red(`Channel ${this.channel_id} not found`).send()
+            return 0
+        }
+        
+        this.current_user_attributes = {
+            can_message: true,
+            can_message_error: null,
+            last_read_id: 0
+        }
+
+        this.name = channel.name
+        this.description = channel.description
+        this.icon = channel.icon
+        this.type = "PUBLIC"
+        this.last_message_id = channel.messages[channel.messages.length - 1]
+        this.recent_messages = []
+        this.uuid = null
+
+        for(var i = 0; i < channel.messages.length; i++) {
+            this.recent_messages.push(await new ChatMessage(channel.messages[i]).load())
+        }
+
+        this.moderated = channel.moderated
+        this.users = []
+
+        return this
+    }
+}
+
+export class ChatMessage {
+    constructor(id){
+        this.message_id = id
+    }
+
+    async load(){
+        const message = await database.db("lazer").collection("messages").findOne({ id: this.message_id })
+        
+        if(message == null){
+            logger.red("Message not found").send()
+            return 0
+        }
+
+        this.sender_id = message.sender_id
+        this.channel_id = message.channel_id
+        this.timestamp = new Date(message.timestamp * 1000).toISOString()
+        this.content = message.content
+        this.is_action = message.is_action
+        this.sender = await new UserCompact(parseInt(message.sender_id)).load()
+
+        return this
+    }
+}
+
 export default {
-    Score
+    Score,
+    ChatChannel,
+    ChatMessage
 }

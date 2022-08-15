@@ -63,10 +63,10 @@ export default async function(fastify, opts){
 
         const session = sessions.get(req.headers.authorization.split(" ")[1])
 
-        logger.purpleBlue(`${session.id} started a score`).send()
+        logger.purpleBlue(`${session.username} (${session.id}) started a score`).send()
 
         const time = Math.floor(Date.now() / 1000)
-        const date = new Date(time).toISOString()
+        const date = new Date(time * 1000).toISOString()
 
         let [ latest, map ] = await Promise.all([
             database.db("lazer").collection("scores").findOne({}, {sort: { id: -1 }}),
@@ -99,6 +99,10 @@ export default async function(fastify, opts){
         const initial = await database.db("lazer").collection("scores").findOne({id: parseInt(req.params.id) })
 
         if(initial == null) return { error: "Couldn't find score" }
+
+        const session = sessions.get(req.headers.authorization.split(" ")[1])
+
+        if(session.id != initial.userid) return { error: "Invalid Authentication" }
 
         let score = req.body
 
@@ -207,7 +211,7 @@ export default async function(fastify, opts){
 
         //Kagerou daze
 
-        logger.green(`Submitting score for ${initial.userid} - `)
+        logger.green(`Submitting score for ${session.username} (${session.id}) - `)
 
         updateRanks()
 

@@ -2,12 +2,14 @@ import database from "../helper/database.js"
 import { User } from "../constants/player.js"
 import { sessions, tokens } from "../constants/cache.js"
 import beatmaps from "./beatmaps.js"
+import chat from "./chat.js"
 import rankings from "./rankings.js"
 import sets from "./sets.js"
 
 export default async function(fastify, opts){
 
     fastify.register(beatmaps, { prefix: '/beatmaps'})
+    fastify.register(chat, { prefix: '/chat' })
     fastify.register(sets, { prefix: '/beatmapsets'})
     fastify.register(rankings, { prefix: '/rankings'})
 
