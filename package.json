@@ -13,7 +13,7 @@
   "dependencies": {
     "@fastify/multipart": "^7.1.0",
     "bcrypt": "^5.0.1",
-    "cutesy.js": "^1.2.0",
+    "cutesy.js": "^1.2.2",
     "fastify": "^4.4.0",
     "mongodb": "^4.8.1",
     "node-cache": "^5.1.2",

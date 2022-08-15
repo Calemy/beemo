@@ -10,8 +10,6 @@ export default async function(fastify, opts){
         const password = req.body?.password?.value
         const refresh_token = req.body?.refresh_token?.value
 
-        logger.purpleBlue(`Trying to login ${username}`).send()
-
         if(refresh_token){
             let session = tokens.get(refresh_token)
             session.expires_in = (Math.floor(Date.now() / 1000) + 86400)
@@ -20,22 +18,24 @@ export default async function(fastify, opts){
             return session
         }
 
-        const user = await database.db("lazer").collection("users").findOne({ username_safe: username })
+        let user = await database.db("lazer").collection("users").findOne({ username_safe: username })
 
         if(user == null){
             logger.red("User not found: " + username).send()
             return error("This Username does not exist")
         } 
 
+        logger.purpleBlue(`Trying to login ${user.username}`).send()
+
         const hash = crypto.createHash('sha256').update(password).digest('base64');
         const check = await bcrypt.compare(hash, user.password)
 
         if(!check){
-            logger.red("Incorrect password for " + username).send()
+            logger.red("Incorrect password for " + user.username).send()
             return error("Invalid Password")
         } 
         if(!(user.privileges & 1)){
-            logger.red(`${username} is restricted`)
+            logger.red(`${user.username} is restricted`)
             return error("You are restricted")
         } 
 
