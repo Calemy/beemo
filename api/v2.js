@@ -1,14 +1,15 @@
 import database from "../helper/database.js"
 import { User } from "../constants/player.js"
 import { sessions, tokens } from "../constants/cache.js"
-import { url } from "../config.js"
 import beatmaps from "./beatmaps.js"
+import rankings from "./rankings.js"
 import sets from "./sets.js"
 
 export default async function(fastify, opts){
 
     fastify.register(beatmaps, { prefix: '/beatmaps'})
     fastify.register(sets, { prefix: '/beatmapsets'})
+    fastify.register(rankings, { prefix: '/rankings'})
 
     fastify.get('/comments', async (req, reply) => {
       return {
@@ -25,6 +26,7 @@ export default async function(fastify, opts){
       await user.loadAccountHistory()
       await user.loadBadges()
       await user.loadModule("beatmap_playcounts_count")
+      await user.loadModule("country", user.country_code)
       await user.loadModule("cover")
       await user.loadModule("favourite_beatmapset_count")
       await user.loadModule("follower_count")
@@ -56,12 +58,11 @@ export default async function(fastify, opts){
       }
       user.ranked_and_approved_beatmapset_count = 0
       user.unranked_beatmapset_count = 0
-      user.country_code = 
       user.scores_pinned_count = 0
 
       return reply.send({
         avatar_url: user.avatar_url,
-        country_code: user.country.code,
+        country_code: user.country_code,
         default_group: user.default_group,
         id: user.id,
         is_active: user.is_active,
@@ -142,6 +143,7 @@ export default async function(fastify, opts){
       await user.loadBadges()
       await user.loadModule("beatmap_playcounts_count")
       await user.loadModule("cover")
+      await user.loadModule("country", user.country_code)
       await user.loadModule("favourite_beatmapset_count")
       await user.loadModule("follower_count")
       await user.loadModule("graveyard_beatmapset_count")
@@ -172,12 +174,11 @@ export default async function(fastify, opts){
       }
       user.ranked_and_approved_beatmapset_count = 0
       user.unranked_beatmapset_count = 0
-      user.country_code = 
       user.scores_pinned_count = 0
 
       return reply.send({
         avatar_url: user.avatar_url,
-        country_code: user.country.code,
+        country_code: user.country_code,
         default_group: user.default_group,
         id: user.id,
         is_active: user.is_active,

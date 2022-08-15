@@ -19,6 +19,7 @@ export class Score {
         let u = new UserCompact(score.userid)
         await u.load()
         await u.loadModule("cover")
+        await u.loadModule("country", u.country_code)
 
         this.accuracy = score.accuracy,
         this.beatmap_id = beatmap.id,

@@ -87,8 +87,6 @@ export default async function(req, reply){
     load.push(user.loadGroups())
     await Promise.all(load)
 
-    user.country_code = u.country
-
     logger.green(`Registered ${user.username} in ${user.country.name}`).send()
 
     return user

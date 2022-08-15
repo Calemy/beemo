@@ -28,7 +28,7 @@ export class UserCompact {
         const user = await database.db("lazer").collection("users").findOne({ id: this.id })
         this.username = user.username
         this.avatar_url = `https:\/\/${url.avatar}\/${this.id + 998}`
-        await this.loadModule("country", user.country)
+        this.country_code = user.country
         this.join_date = new Date(user.register_date * 1000).toISOString()
         this.last_visit = new Date(user.latest_activity * 1000).toISOString()
         this.default_group = "default"
@@ -216,6 +216,8 @@ export class UserStatistics {
     async load(){
         //! Maybe int to string converter needed
         let statistics = await database.db("lazer").collection("stats").findOne({ id: this.id })
+
+        delete statistics._id
 
         if(statistics == null){
             logger.red("User has no stats").send()
