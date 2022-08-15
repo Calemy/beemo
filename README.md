@@ -17,7 +17,7 @@ a javascript osu!bancho implementation for lazer because i can't typescript
 - Make all modes compatible
 - Multiplayer
 - Spectator
-- Chat
+- Chat (partly done, needs cleanups)
 - Calculate & Display ranks (partly done)
 - Temporary pp system until a calculator gets updated/released
 - Additional browser support / Frontend
@@ -32,6 +32,8 @@ a javascript osu!bancho implementation for lazer because i can't typescript
 ![Profiles](https://x.catboy.best/xFmEY1e.png)
 
 ![Direct](https://x.catboy.best/5SsKSXn.png)
+
+![Chat](https://x.catboy.best/FmiyFGH.png)
 
 
 ## Installation
