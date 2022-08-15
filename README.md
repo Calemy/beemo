@@ -9,12 +9,16 @@ a javascript osu!bancho implementation for lazer because i can't typescript
 - Stats
 - osu!direct
 - Cross-Plattfrom support
+- Global Leaderboard Ranking (Score)
 
 
 ## Roadmap
 
 - Make all modes compatible
-- Calculate & Display ranks
+- Multiplayer
+- Spectator
+- Chat
+- Calculate & Display ranks (partly done)
 - Temporary pp system until a calculator gets updated/released
 - Additional browser support / Frontend
 
@@ -22,6 +26,8 @@ a javascript osu!bancho implementation for lazer because i can't typescript
 ## Screenshots
 
 ![Leaderboards](https://x.catboy.best/ERMntNX.jpg)
+
+![Rankings](https://x.catboy.best/cbHUaGd.png)
 
 ![Profiles](https://x.catboy.best/xFmEY1e.png)
 
