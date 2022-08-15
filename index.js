@@ -8,7 +8,7 @@ async function main(){
     logger.purpleBlue("Connected to database").send()
     await updateRanks()
     logger.purpleBlue("Updated ranks").send()
-    await loadChannel()
+    await loadChannels()
     logger.purpleBlue("Loaded channels").send()
     logger.rainbow("Started Beemo v1.0.5").purpleBlue().send()
     api()
