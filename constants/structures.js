@@ -1,6 +1,7 @@
 import database from "../helper/database.js"
 import logger from "../helper/logger.js"
 import { UserCompact } from "./player.js"
+import { db } from "../config.js"
 
 export class Score {
     constructor(id){
@@ -8,9 +9,9 @@ export class Score {
     }
 
     async load(){
-        const score = await database.db("lazer").collection("scores").findOne({ id: this.id })
+        const score = await database.db(db).collection("scores").findOne({ id: this.id })
         if(score == null) return 0
-        let beatmap = await database.db("lazer").collection("beatmaps").findOne({ checksum: score.beatmap })
+        let beatmap = await database.db(db).collection("beatmaps").findOne({ checksum: score.beatmap })
         if(beatmap == null){
             logger.red("Beatmap for score not found. This does not seem correct").send()
             beatmap.id = 0
@@ -57,8 +58,8 @@ export class ChatChannel {
 
     async load(){
 
-        const channel = await database.db("lazer").collection("channels").findOne({ id: this.channel_id })
-        const user = await database.db("lazer").collection("userStatus").findOne({ id: this.user })
+        const channel = await database.db(db).collection("channels").findOne({ id: this.channel_id })
+        const user = await database.db(db).collection("userStatus").findOne({ id: this.user })
 
         if(channel == null){
             logger.red(`Channel ${this.channel_id} not found`).send()
@@ -96,7 +97,7 @@ export class ChatMessage {
     }
 
     async load(){
-        const message = await database.db("lazer").collection("messages").findOne({ id: this.message_id })
+        const message = await database.db(db).collection("messages").findOne({ id: this.message_id })
         
         if(message == null){
             logger.red("Message not found").send()

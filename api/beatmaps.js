@@ -4,13 +4,13 @@ import { sessions } from "../constants/cache.js"
 import database from "../helper/database.js"
 import get from "../helper/osu.js"
 import logger from "../helper/logger.js"
-import { url } from "../config.js"
+import { url, db } from "../config.js"
 import { updateRanks } from "../modules/cron.js"
 
 export default async function(fastify, opts){
     fastify.get('/lookup', async (req, reply) => { //* Beatmap Information
         logger.purpleBlue("Loading Beatmap information for " + req.query.id).send()
-        const search = await database.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.query.id) })
+        const search = await database.db(db).collection("beatmaps").findOne({ id: parseInt(req.query.id) })
 
         if(search != null) return search
 
@@ -21,7 +21,7 @@ export default async function(fastify, opts){
 
         logger.green(`Adding Beatmaps from ${set.title}`).send()
 
-        await database.db("lazer").collection("beatmaps").insertMany(set.beatmaps)
+        await database.db(db).collection("beatmaps").insertMany(set.beatmaps)
 
         return response
     })
@@ -30,8 +30,8 @@ export default async function(fastify, opts){
 
         await fetch(`https://${url.base}/api/v2/beatmaps/lookup?id=${req.params.id}`)
 
-        const beatmap = await database.db("lazer").collection("beatmaps").findOne({ id: parseInt(req.params.id) })
-        const scores = await database.db("lazer").collection("scores").find({ beatmap: beatmap.checksum, completed: 3 }).sort({total_score : -1}).toArray()
+        const beatmap = await database.db(db).collection("beatmaps").findOne({ id: parseInt(req.params.id) })
+        const scores = await database.db(db).collection("scores").find({ beatmap: beatmap.checksum, completed: 3 }).sort({total_score : -1}).toArray()
         
         const result = []
 
@@ -69,13 +69,13 @@ export default async function(fastify, opts){
         const date = new Date(time * 1000).toISOString()
 
         let [ latest, map ] = await Promise.all([
-            database.db("lazer").collection("scores").findOne({}, {sort: { id: -1 }}),
-            database.db("lazer").collection("beatmaps").findOne({ checksum: beatmap })
+            database.db(db).collection("scores").findOne({}, {sort: { id: -1 }}),
+            database.db(db).collection("beatmaps").findOne({ checksum: beatmap })
         ])
 
         if(!latest || latest == null) latest = { id: 0 }
 
-        database.db("lazer").collection("scores").insertOne({
+        database.db(db).collection("scores").insertOne({
             id: latest.id + 1,
             userid: session.id,
             beatmap: beatmap,
@@ -96,7 +96,7 @@ export default async function(fastify, opts){
     fastify.put('/:bid/solo/scores/:id', async (req, reply) => { //* Post-game Submission
         const time = Math.floor(Date.now() / 1000)
 
-        const initial = await database.db("lazer").collection("scores").findOne({id: parseInt(req.params.id) })
+        const initial = await database.db(db).collection("scores").findOne({id: parseInt(req.params.id) })
 
         if(initial == null) return { error: "Couldn't find score" }
 
@@ -106,9 +106,9 @@ export default async function(fastify, opts){
 
         let score = req.body
 
-        let scores = await database.db("lazer").collection("scores").find({ userid: initial.userid, completed: 3}).sort({total_score: -1}).limit(100).toArray()
-        let beatmap = await database.db("lazer").collection("beatmaps").findOne({checksum: initial.beatmap})
-        let stats = await database.db("lazer").collection("stats").findOne({id: initial.userid })
+        let scores = await database.db(db).collection("scores").find({ userid: initial.userid, completed: 3}).sort({total_score: -1}).limit(100).toArray()
+        let beatmap = await database.db(db).collection("beatmaps").findOne({checksum: initial.beatmap})
+        let stats = await database.db(db).collection("stats").findOne({id: initial.userid })
         if(stats == null) return
         if(beatmap == null) return
 
@@ -119,14 +119,14 @@ export default async function(fastify, opts){
             if(!score.passed) return c
             c++
 
-            let best = await database.db("lazer").collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap, completed: { $gt: 1 } }).sort({total_score: -1}).toArray()
+            let best = await database.db(db).collection("scores").find({ userid: initial.userid, beatmap: initial.beatmap, completed: { $gt: 1 } }).sort({total_score: -1}).toArray()
             c++ //Map ranked, c++
 
             if(best.length > 0){
                 if(score.total_score > best[0].total_score){
                     c++
                     best[0].completed = 2
-                    await database.db("lazer").collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
+                    await database.db(db).collection("scores").findOneAndUpdate({ id: best[0].id} , { $set: best[0] })
                     stats.ranked_score -= best[0].total_score
                     stats.ranked_score += score.total_score
                 }
@@ -172,7 +172,7 @@ export default async function(fastify, opts){
         score.legacy_fc = null
         //Calculate rosu-pp || for now using mino LUL
 
-        await database.db("lazer").collection("scores").findOneAndUpdate({id: parseInt(req.params.id) }, { $set : {
+        await database.db(db).collection("scores").findOneAndUpdate({id: parseInt(req.params.id) }, { $set : {
             accuracy: score.accuracy,
             build_id: 6519,
             ended_at: time,
@@ -207,7 +207,7 @@ export default async function(fastify, opts){
         stats.hit_accuracy = await calculateAcc()
 
 
-        await database.db("lazer").collection("stats").findOneAndUpdate({id: initial.userid }, { $set : stats })
+        await database.db(db).collection("stats").findOneAndUpdate({id: initial.userid }, { $set : stats })
 
         //Kagerou daze
 

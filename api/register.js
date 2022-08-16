@@ -4,6 +4,7 @@ import fetch from "node-fetch"
 import { User } from "../constants/player.js"
 import database from "../helper/database.js"
 import logger from "../helper/logger.js"
+import { db } from "../config.js"
 
 export default async function(req, reply){
     const [ username, email, password ] = [req.body["user[username]"].value, req.body["user[user_email]"].value, req.body["user[password]"].value]
@@ -11,7 +12,7 @@ export default async function(req, reply){
     logger.purpleBlue("Trying to register " + username).send()
 
     const username_safe = username.toLowerCase().replaceAll(" ", "_")
-    const check = await database.db("lazer").collection("users").findOne({ $or : [{ username_safe: username_safe}, { email: email }] })
+    const check = await database.db(db).collection("users").findOne({ $or : [{ username_safe: username_safe}, { email: email }] })
 
     if(check != null){
         let form_error = { user : {} }
@@ -24,14 +25,14 @@ export default async function(req, reply){
 
     const hashed = await bcrypt.hash(hash, 10)
 
-    let init = await database.db("lazer").collection("users").find({}).sort({id: -1}).toArray()
+    let init = await database.db(db).collection("users").find({}).sort({id: -1}).toArray()
 
     const countryRequest = await fetch(`https://ip.zxq.co/${req.ips[req.ips.length - 1]}`)
     const { country } = await countryRequest.json()
 
     if(init.length < 1) init = [{ id: 2 }]
 
-    await database.db("lazer").collection("users").insertOne({
+    await database.db(db).collection("users").insertOne({
         id: parseInt(init[0].id) + 1,
         username: username,
         username_safe: username_safe,
@@ -47,7 +48,7 @@ export default async function(req, reply){
 
     //TODO: Create Stats
 
-    await database.db("lazer").collection("stats").insertOne({
+    await database.db(db).collection("stats").insertOne({
         id: parseInt(init[0].id) + 1,
         grade_counts: {
             a: 0,
@@ -72,7 +73,7 @@ export default async function(req, reply){
         total_score: 0
     })
 
-    const u = await database.db("lazer").collection("users").findOne({id: parseInt(init[0].id) + 1})
+    const u = await database.db(db).collection("users").findOne({id: parseInt(init[0].id) + 1})
 
     let user = await new User(u.id).load()
 

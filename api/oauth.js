@@ -3,6 +3,7 @@ import crypto from "node:crypto"
 import { sessions, tokens } from "../constants/cache.js"
 import database from "../helper/database.js"
 import logger from "../helper/logger.js"
+import { db } from "../config.js"
 
 export default async function(fastify, opts){
     fastify.post('/token', async (req, reply) => {
@@ -18,7 +19,7 @@ export default async function(fastify, opts){
             return session
         }
 
-        let user = await database.db("lazer").collection("users").findOne({ username_safe: username })
+        let user = await database.db(db).collection("users").findOne({ username_safe: username })
 
         if(user == null){
             logger.red("User not found: " + username).send()

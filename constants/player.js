@@ -5,7 +5,7 @@ import { sessions } from "./cache.js"
 import database from "../helper/database.js"
 import logger from "../helper/logger.js"
 import { calculateRank } from "../helper/server.js"
-import { url } from "../config.js"
+import { url, db } from "../config.js"
 
 export class UserCompact {
     //!i hate peppy
@@ -25,7 +25,7 @@ export class UserCompact {
     }
 
     async load(){
-        const user = await database.db("lazer").collection("users").findOne({ id: this.id })
+        const user = await database.db(db).collection("users").findOne({ id: this.id })
         this.username = user.username
         this.avatar_url = `https:\/\/${url.avatar}\/${this.id + 998}`
         this.country_code = user.country
@@ -119,7 +119,7 @@ export class UserAccountHistory {
     }
 
     async load(){
-        const incidents = await database.db("lazer").collection("incidents").find({ user: this.id }).project({ user: 0 }).sort({ timestamp: -1 }).toArray()
+        const incidents = await database.db(db).collection("incidents").find({ user: this.id }).project({ user: 0 }).sort({ timestamp: -1 }).toArray()
         if(incidents.length < 1) return this.incidents
         for(let i = 0; i < incidents.length; i++){
             let incident = incidents[i]
@@ -139,7 +139,7 @@ export class UserBadge {
     }
 
     async load(){
-        const badges = await database.db("lazer").collection("cosmetics").find({ id: this.id }).sort({ "badges.awarded_at": -1 }).toArray()
+        const badges = await database.db(db).collection("cosmetics").find({ id: this.id }).sort({ "badges.awarded_at": -1 }).toArray()
         if(badges.length < 1) return this.badges
         for(let i = 0; i < badges.length; i++){
             const userBadge = badges[i]
@@ -167,7 +167,7 @@ export class UserGroup {
     }
 
     async load(){
-        const group = await database.db("lazer").collection("cosmetics").find({ id: this.id }).sort({ "groups.id" : 1 }).toArray()
+        const group = await database.db(db).collection("cosmetics").find({ id: this.id }).sort({ "groups.id" : 1 }).toArray()
         if(group.length < 1) return this.groups
 
         for(let i = 0; i < groups.length; i++){
@@ -191,7 +191,7 @@ export class UserMonthlyPlaycount {
     }
 
     async load(){
-        const playcount = await database.db("lazer").collection("playcount").find({ id: this.id }).sort({ start_date : 1 }).toArray()
+        const playcount = await database.db(db).collection("playcount").find({ id: this.id }).sort({ start_date : 1 }).toArray()
         if(playcount.length < 1) return this.monthly_playcounts
 
         for(let i = 0; i < playcount.length; i++) {
@@ -215,7 +215,7 @@ export class UserStatistics {
 
     async load(){
         //! Maybe int to string converter needed
-        let statistics = await database.db("lazer").collection("stats").findOne({ id: this.id })
+        let statistics = await database.db(db).collection("stats").findOne({ id: this.id })
 
         delete statistics._id
 

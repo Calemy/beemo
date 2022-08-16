@@ -1,10 +1,11 @@
 import database from "../helper/database.js"
 import { User } from "../constants/player.js"
-import { sessions, tokens } from "../constants/cache.js"
+import { sessions } from "../constants/cache.js"
 import beatmaps from "./beatmaps.js"
 import chat from "./chat.js"
 import rankings from "./rankings.js"
 import sets from "./sets.js"
+import { db } from "../config.js"
 
 export default async function(fastify, opts){
 
@@ -136,7 +137,7 @@ export default async function(fastify, opts){
       if(!key) key = "id"
 
       if(key != "id"){
-        const u = await database.db("lazer").collection("users").findOne({username_safe: id.toLowerCase().replaceAll(" ", "_")})
+        const u = await database.db(db).collection("users").findOne({username_safe: id.toLowerCase().replaceAll(" ", "_")})
         id = u.id
       }
     
