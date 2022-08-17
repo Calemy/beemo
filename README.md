@@ -1,15 +1,15 @@
 # Beemo
 
-a javascript osu!bancho implementation for lazer because i can't typescript
+Beemo is a Javascript bancho implementation for osu! lazer.
 
 ## Features
 
 - Register & Login
-- Score Submission
-- Stats
+- Score submission
+- Statistics
 - osu!direct
-- Cross-Plattfrom support
-- Global Leaderboard Ranking (Score)
+- Cross-platform support
+- Global leaderboard ranking (Score)
 
 
 ## Roadmap
@@ -17,8 +17,8 @@ a javascript osu!bancho implementation for lazer because i can't typescript
 - Make all modes compatible
 - Multiplayer
 - Spectator
-- Chat (partly done, needs cleanups)
-- Calculate & Display ranks (partly done)
+- Chat (partly done, needs cleanup)
+- Calculate & display ranks (partly done)
 - Temporary pp system until a calculator gets updated/released
 - Additional browser support / Frontend
 
@@ -38,15 +38,10 @@ a javascript osu!bancho implementation for lazer because i can't typescript
 
 ## Installation
 
-This installation is required to have nginx and mongodb 6 installed.
+For installation, it is required to have nodejs (preferably 16.10), nginx and mongodb 6 installed.
+For a certificate, you can use something like certbot.
 
-This got tested with nodejs version 16.10
-
-For a working certificate you need to be resposible at the moment.
-You can always use tools like certbot or acme.sh
-
-git clone the repository and edit the config
-
+`git clone` the repository and edit the configuration file as needed.
 ```bash
   git clone https://github.com/calemy/beemo
   cd beemo
@@ -54,8 +49,7 @@ git clone the repository and edit the config
   mv config.example.js config.js
 ```
 
-install all necessary dependencies using npm and start beemo using pm2
-
+Install all necessary dependencies using npm and start beemo using pm2.
 ```bash
   npm install
   npm install -g pm2
@@ -63,7 +57,6 @@ install all necessary dependencies using npm and start beemo using pm2
 ```
 
 Add something like this to your nginx config.
-
 ```nginx
 server {
     listen 80;
@@ -95,10 +88,10 @@ server {
 }
 ```
 
-Restart nginx
+Restart nginx to apply changes, and 
 
 ```bash
-sudo service nginx restart
+sudo nginx -s reload -T && sudo nginx -s reload
 ```
 
 
@@ -112,35 +105,30 @@ Feel free to join as contributor!
 
 #### What modes are supported?
 
-Currently i'm focusing on making it work for standard.
+Currently, Standard is the gamemode receiving service.
 Other modes will most likely be added in the future.
 
 #### When is this going to be done?
 There is no guarantee that this is ever going to be finished,
-but by the time lazer releases it might take aprox. another month or two.
+but by the time lazer releases, it might take approx. another month or two.
 Depending on the situation around this project.
 
 #### Why is *insert issue here* not working?
 
-It's still very early in development.
+This project is still very early in development.
 
-As for currently, i'm working alone on the project and therefore,
+As for currently, I'm working alone on the project and therefore,
 there might be things that are not done yet!
 
 Additionally osu!lazer is not finished either
 and might change a lot of things that might break the server.
 
-#### Why are you using javascript and not *insert language here*?
+#### Why are you using Javascript and not *insert language here*?
 
-Simply because i like javascript and feel comfortable enough
+Simply because I like javascript and feel comfortable enough
 to write code this advanced in it. If you don't like it, it's not my problem
-so deal with it. Also it's decently fast compared to languages like python.
+so deal with it. Also, it's decently fast compared to languages like Python.
 Yes, even the node v8 runtime.
-## Optimizations
-
-With Version 1 that came with the code-refactor we achieved to make the code easier to
-maintain to what was possible for us to reduce the code to without losing important stuff.
-
 
 ## Feedback
 
