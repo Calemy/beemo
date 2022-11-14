@@ -1,22 +1,34 @@
 {
-  "name": "lazer",
+  "name": "beemo",
   "version": "1.0.0",
-  "description": "",
+  "description": "a javascript osu!bancho implementation for lazer because i can't typescript",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Calemy/beemo.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Calemy/beemo/issues"
+  },
+  "homepage": "https://github.com/Calemy/beemo#readme",
+  "devDependencies": {
+    "tsx": "^3.12.1"
+  },
   "dependencies": {
-    "@fastify/multipart": "^7.1.0",
-    "bcrypt": "^5.0.1",
+    "@fastify/multipart": "^7.3.0",
+    "@types/node": "^18.11.9",
+    "bcrypt": "^5.1.0",
     "cutesy.js": "^1.2.2",
-    "fastify": "^4.4.0",
-    "mongodb": "^4.8.1",
+    "dotenv": "^16.0.3",
+    "fastify": "^4.9.2",
     "node-cache": "^5.1.2",
-    "node-fetch": "^3.2.10"
+    "node-fetch": "^3.3.0",
+    "surrealdb.js": "^0.5.0"
   }
 }

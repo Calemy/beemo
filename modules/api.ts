@@ -1,7 +1,7 @@
 import { fastify as f } from "fastify"
+import { FastifyRequest, FastifyReply } from "fastify"
 import multipart from "@fastify/multipart"
-import { url, port } from "../config.js"
-import logger from "../helper/logger.js"
+import logger from "../helper/logger"
 import multiplayer from "../api/multiplayer.js"
 import oauth from "../api/oauth.js"
 import register from "../api/register.js"
@@ -21,7 +21,7 @@ export default async function(){
 
 
     fastify.get('/', async (req, reply) => {
-        return "Version 1.0.5 - by Nanoo <3\n"+
+        return "Version 1.1.0 - by Nanoo and HorizonCode <3\n"+
         "Consider contributing or donating to this project!\n"+
         "Repository: https://github.com/calemy/beemo"
     })
@@ -30,6 +30,6 @@ export default async function(){
         return await register(req, reply)
     })
 
-    await fastify.listen({ port })
-    logger.purpleBlue(`Listening on https://${url.base} (Port ${port})`).send()
+    await fastify.listen({ port: parseInt(process.env.PORT as string) })
+    logger.purpleBlue(`Listening on https://${process.env.BASE_URL as string} (Port ${process.env.PORT as string})`).send()
 }

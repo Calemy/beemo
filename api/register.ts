@@ -1,12 +1,13 @@
 import bcrypt from "bcrypt"
-import crypto from "node:crypto"
+import crypto from "crypto"
 import fetch from "node-fetch"
 import { User } from "../constants/player.js"
-import database from "../helper/database.js"
+import { database } from "../helper/database.js"
 import logger from "../helper/logger.js"
 import { db } from "../config.js"
+import { FastifyRequest, FastifyReply } from "fastify"
 
-export default async function(req, reply){
+export default async function(req: FastifyRequest, reply: FastifyReply){
     const [ username, email, password ] = [req.body["user[username]"].value, req.body["user[user_email]"].value, req.body["user[password]"].value]
 
     logger.purpleBlue("Trying to register " + username).send()
